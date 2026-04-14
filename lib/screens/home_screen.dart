@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:lucide_icons/lucide_icons.dart';
 import 'package:flutter_tts/flutter_tts.dart';
-import '../models/data.dart';
-import 'menu_screen.dart';
+import '../main.dart';
+import 'search_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({Key? key}) : super(key: key);
@@ -12,11 +12,8 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
-  String selectedCategory = '전체';
-  String searchQuery = '';
   bool voiceModeOn = false;
   final FlutterTts _tts = FlutterTts();
-  final TextEditingController _searchController = TextEditingController();
 
   @override
   void initState() {
@@ -28,99 +25,60 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   void dispose() {
     _tts.stop();
-    _searchController.dispose();
     super.dispose();
   }
 
-  List<Restaurant> get _filteredRestaurants {
-    return mockRestaurants.where((r) {
-      final matchCategory = selectedCategory == '전체' || r.category == selectedCategory;
-      final q = searchQuery.toLowerCase();
-      final matchSearch = q.isEmpty ||
-          r.name.toLowerCase().contains(q) ||
-          r.category.toLowerCase().contains(q) ||
-          r.location.toLowerCase().contains(q) ||
-          r.menus.any((m) => m.name.toLowerCase().contains(q));
-      return matchCategory && matchSearch;
-    }).toList();
-  }
-
-  void _handleRestaurantTap(Restaurant r) {
-    if (voiceModeOn) {
-      final text =
-          '${r.name}. 위치는 ${r.location}. 카테고리는 ${r.category}. '
-          '${r.hasWheelchairRamp ? "휠체어 접근이 가능합니다." : ""}'
-          '${r.allowsGuideDogs ? " 안내견 동반이 가능합니다." : ""}'
-          '${r.hasAudioMenu ? " 오디오 메뉴를 제공합니다." : ""}';
-      _tts.speak(text);
-    } else {
-      Navigator.push(
-        context,
-        MaterialPageRoute(builder: (_) => MenuScreen(restaurant: r)),
-      );
-    }
-  }
-
-  Widget _buildAccessibilityTag(IconData icon, String label, Color color) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 5),
-      decoration: BoxDecoration(
-        color: color.withOpacity(0.12),
-        borderRadius: BorderRadius.circular(10),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(icon, size: 13, color: color),
-          const SizedBox(width: 4),
-          Text(label, style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: color)),
-        ],
+  void _goSearch({String initialQuery = '', String initialCategory = ''}) {
+    Navigator.push(
+      context,
+      PageRouteBuilder(
+        pageBuilder: (_, __, ___) => SearchScreen(
+          initialQuery: initialQuery,
+          initialCategory: initialCategory,
+        ),
+        transitionsBuilder: (_, anim, __, child) =>
+            FadeTransition(opacity: anim, child: child),
+        transitionDuration: const Duration(milliseconds: 200),
       ),
     );
   }
 
   @override
   Widget build(BuildContext context) {
-    final filtered = _filteredRestaurants;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final surfaceColor = Theme.of(context).colorScheme.surface;
+    final textColor = isDark ? Colors.white : Colors.black87;
+    final subTextColor = isDark ? Colors.grey.shade400 : Colors.grey.shade800;
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF4F6FB),
-      floatingActionButton: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          // Voice Mode Toggle FAB
-          FloatingActionButton.extended(
-            heroTag: 'voiceFab',
-            onPressed: () {
-              setState(() {
-                voiceModeOn = !voiceModeOn;
-              });
-              if (voiceModeOn) {
-                _tts.speak('음성 안내 모드가 켜졌습니다. 식당 카드를 탭하면 정보를 읽어드립니다.');
-              } else {
-                _tts.stop();
-              }
-            },
-            backgroundColor: voiceModeOn ? Colors.blue[700] : Colors.white,
-            foregroundColor: voiceModeOn ? Colors.white : Colors.blue[700],
-            elevation: voiceModeOn ? 8 : 2,
-            icon: Icon(voiceModeOn ? LucideIcons.volume2 : LucideIcons.volumeX),
-            label: Text(
-              voiceModeOn ? '음성모드 ON' : '음성모드 OFF',
-              style: const TextStyle(fontWeight: FontWeight.bold),
-            ),
-          ),
-          const SizedBox(height: 12),
-        ],
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+      floatingActionButton: FloatingActionButton.extended(
+        heroTag: 'voiceFab',
+        onPressed: () {
+          setState(() => voiceModeOn = !voiceModeOn);
+          if (voiceModeOn) {
+            _tts.speak('음성 안내 모드가 켜졌습니다. 검색창을 탭하여 식당을 찾아보세요.');
+          } else {
+            _tts.stop();
+          }
+        },
+        backgroundColor: voiceModeOn ? Colors.blue[700] : Colors.white,
+        foregroundColor: voiceModeOn ? Colors.white : Colors.blue[700],
+        elevation: voiceModeOn ? 8 : 2,
+        icon: Icon(voiceModeOn ? LucideIcons.volume2 : LucideIcons.volumeX),
+        label: Text(
+          voiceModeOn ? '음성모드 ON' : '음성모드 OFF',
+          style: const TextStyle(fontWeight: FontWeight.bold),
+        ),
       ),
       body: SafeArea(
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+        child: ListView(
+          padding: EdgeInsets.zero,
           children: [
-            // ── Header ─────────────────────────────────────────────────────
+            // ── 헤더 ──────────────────────────────────────────────────────────
             Container(
-              color: Colors.white,
-              padding: const EdgeInsets.fromLTRB(24, 24, 24, 16),
+              color: surfaceColor,
+              padding: const EdgeInsets.fromLTRB(24, 24, 24, 20),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -140,268 +98,350 @@ class _HomeScreenState extends State<HomeScreen> {
                             ),
                           ),
                           const SizedBox(height: 4),
-                          const Text(
+                          Text(
                             '배리어프리 맛집 탐색',
                             style: TextStyle(
                               fontSize: 22,
                               fontWeight: FontWeight.bold,
-                              color: Colors.black87,
+                              color: textColor,
                             ),
                           ),
                         ],
                       ),
-                      CircleAvatar(
-                        backgroundColor: Colors.blue[50],
-                        child: Icon(LucideIcons.user, color: Colors.blue[600]),
+                      Row(
+                        children: [
+                          IconButton(
+                            icon: Icon(
+                              isDark ? LucideIcons.sun : LucideIcons.moon,
+                              color: isDark ? Colors.amber : Colors.blueGrey,
+                            ),
+                            onPressed: () {
+                              themeNotifier.value = isDark ? ThemeMode.light : ThemeMode.dark;
+                            },
+                          ),
+                          const SizedBox(width: 8),
+                          CircleAvatar(
+                            backgroundColor: isDark ? Colors.grey.shade800 : Colors.blue[50],
+                            child: Icon(LucideIcons.user, color: isDark ? Colors.white : Colors.blue[600]),
+                          ),
+                        ],
                       ),
                     ],
                   ),
                   const SizedBox(height: 20),
 
-                  // ── 실시간 검색창 ───────────────────────────────────────
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-                    decoration: BoxDecoration(
-                      color: const Color(0xFFF4F6FB),
-                      borderRadius: BorderRadius.circular(16),
-                      border: Border.all(color: Colors.grey.shade200),
-                    ),
-                    child: Row(
-                      children: [
-                        const Icon(LucideIcons.search, color: Colors.grey, size: 20),
-                        const SizedBox(width: 8),
-                        Expanded(
-                          child: TextField(
-                            controller: _searchController,
-                            onChanged: (val) => setState(() => searchQuery = val),
-                            decoration: const InputDecoration(
-                              hintText: '식당명, 메뉴, 지역으로 검색...',
-                              hintStyle: TextStyle(fontSize: 14, color: Colors.grey),
-                              border: InputBorder.none,
-                              isDense: true,
-                              contentPadding: EdgeInsets.symmetric(vertical: 12),
-                            ),
-                          ),
-                        ),
-                        if (searchQuery.isNotEmpty)
-                          GestureDetector(
-                            onTap: () {
-                              _searchController.clear();
-                              setState(() => searchQuery = '');
-                            },
-                            child: const Icon(LucideIcons.x, size: 18, color: Colors.grey),
-                          ),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-            ),
-
-            // ── 카테고리 필터 ──────────────────────────────────────────────
-            Container(
-              color: Colors.white,
-              padding: const EdgeInsets.only(left: 24, right: 24, bottom: 16),
-              child: SingleChildScrollView(
-                scrollDirection: Axis.horizontal,
-                child: Row(
-                  children: mockCategories.map((cat) {
-                    final isSelected = cat == selectedCategory;
-                    return Padding(
-                      padding: const EdgeInsets.only(right: 10),
-                      child: GestureDetector(
-                        onTap: () => setState(() => selectedCategory = cat),
-                        child: AnimatedContainer(
-                          duration: const Duration(milliseconds: 200),
-                          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-                          decoration: BoxDecoration(
-                            color: isSelected ? Colors.blue[600] : const Color(0xFFF4F6FB),
-                            borderRadius: BorderRadius.circular(24),
-                            border: Border.all(
-                              color: isSelected ? Colors.blue.shade600 : Colors.grey.shade200,
-                            ),
-                            boxShadow: isSelected
-                                ? [BoxShadow(color: Colors.blue.withOpacity(0.25), blurRadius: 8, offset: const Offset(0, 4))]
-                                : [],
-                          ),
-                          child: Text(
-                            cat,
-                            style: TextStyle(
-                              fontSize: 14,
-                              fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
-                              color: isSelected ? Colors.white : Colors.black87,
-                            ),
-                          ),
-                        ),
-                      ),
-                    );
-                  }).toList(),
-                ),
-              ),
-            ),
-
-            // ── 검색 결과 수 ───────────────────────────────────────────────
-            Padding(
-              padding: const EdgeInsets.fromLTRB(24, 12, 24, 4),
-              child: Row(
-                children: [
-                  Text(
-                    '총 ${filtered.length}개 식당',
-                    style: TextStyle(fontSize: 13, color: Colors.grey[600], fontWeight: FontWeight.w600),
-                  ),
-                  if (voiceModeOn) ...[
-                    const SizedBox(width: 8),
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                  // ── 검색창 버튼 ────────────────────────────────────────────
+                  GestureDetector(
+                    onTap: () => _goSearch(),
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 16, vertical: 16),
                       decoration: BoxDecoration(
-                        color: Colors.blue[600],
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      child: const Text('🔊 음성모드 ON – 카드를 탭하면 정보를 읽어드립니다',
-                          style: TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.bold)),
-                    ),
-                  ],
-                ],
-              ),
-            ),
-
-            // ── 식당 리스트 ───────────────────────────────────────────────
-            Expanded(
-              child: filtered.isEmpty
-                  ? Center(
-                      child: Column(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Icon(LucideIcons.searchX, size: 48, color: Colors.grey[300]),
-                          const SizedBox(height: 12),
-                          Text('검색 결과가 없습니다.', style: TextStyle(color: Colors.grey[500], fontSize: 16)),
+                        color: isDark ? const Color(0xFF2A2A2A) : const Color(0xFFF4F6FB),
+                        borderRadius: BorderRadius.circular(16),
+                        border:
+                            Border.all(color: isDark ? Colors.grey.shade700 : Colors.blue.shade200, width: 1.5),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.blue.withOpacity(isDark ? 0.0 : 0.06),
+                            blurRadius: 10,
+                            offset: const Offset(0, 4),
+                          ),
                         ],
                       ),
-                    )
-                  : ListView.builder(
-                      padding: const EdgeInsets.fromLTRB(24, 8, 24, 120),
-                      itemCount: filtered.length,
-                      itemBuilder: (context, index) {
-                        final r = filtered[index];
-                        return GestureDetector(
-                          onTap: () => _handleRestaurantTap(r),
-                          child: Container(
-                            margin: const EdgeInsets.only(bottom: 24),
-                            decoration: BoxDecoration(
-                              color: Colors.white,
-                              borderRadius: BorderRadius.circular(24),
-                              boxShadow: [
-                                BoxShadow(
-                                  color: Colors.black.withOpacity(0.06),
-                                  blurRadius: 16,
-                                  offset: const Offset(0, 6),
-                                ),
-                              ],
-                            ),
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                // 식당 이미지
-                                Stack(
-                                  children: [
-                                    Hero(
-                                      tag: r.id,
-                                      child: ClipRRect(
-                                        borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
-                                        child: Image.network(
-                                          r.imageUrl,
-                                          height: 180,
-                                          width: double.infinity,
-                                          fit: BoxFit.cover,
-                                          errorBuilder: (_, __, ___) => Container(
-                                            height: 180,
-                                            color: Colors.grey[200],
-                                            child: const Center(child: Icon(LucideIcons.image, color: Colors.grey)),
-                                          ),
-                                        ),
-                                      ),
-                                    ),
-                                    // 카테고리 뱃지
-                                    Positioned(
-                                      top: 12,
-                                      right: 12,
-                                      child: Container(
-                                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
-                                        decoration: BoxDecoration(
-                                          color: Colors.white.withOpacity(0.9),
-                                          borderRadius: BorderRadius.circular(20),
-                                        ),
-                                        child: Text(r.category,
-                                            style: TextStyle(
-                                                fontSize: 12,
-                                                fontWeight: FontWeight.bold,
-                                                color: Colors.blue[700])),
-                                      ),
-                                    ),
-                                    // 음성모드 안내 오버레이
-                                    if (voiceModeOn)
-                                      Positioned.fill(
-                                        child: ClipRRect(
-                                          borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
-                                          child: Container(
-                                            color: Colors.blue.withOpacity(0.15),
-                                            child: const Center(
-                                              child: Icon(LucideIcons.volume2, color: Colors.white, size: 36),
-                                            ),
-                                          ),
-                                        ),
-                                      ),
-                                  ],
-                                ),
+                      child: Row(
+                        children: [
+                          Icon(LucideIcons.search,
+                              color: Colors.blue.shade400, size: 20),
+                          const SizedBox(width: 10),
+                          Text(
+                            '식당명, 음식 메뉴로 검색해보세요',
+                            style: TextStyle(
+                                fontSize: 14, color: isDark ? Colors.grey.shade400 : Colors.grey.shade500),
+                          ),
+                          const Spacer(),
+                          Icon(LucideIcons.arrowRight,
+                              size: 16, color: isDark ? Colors.grey.shade400 : Colors.blue.shade300),
+                        ],
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 8),
 
-                                // 식당 정보
-                                Padding(
-                                  padding: const EdgeInsets.all(18),
-                                  child: Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
-                                    children: [
-                                      Text(r.name,
-                                          style: const TextStyle(fontSize: 19, fontWeight: FontWeight.bold)),
-                                      const SizedBox(height: 6),
-                                      Row(
-                                        children: [
-                                          Icon(LucideIcons.mapPin, size: 13, color: Colors.grey[500]),
-                                          const SizedBox(width: 4),
-                                          Expanded(
-                                            child: Text(r.location,
-                                                style: TextStyle(fontSize: 12, color: Colors.grey[600]),
-                                                overflow: TextOverflow.ellipsis),
-                                          ),
-                                        ],
-                                      ),
-                                      const SizedBox(height: 14),
+            // ── 카테고리 빠른 탐색 ─────────────────────────────────────────────
+            Container(
+              color: surfaceColor,
+              padding: const EdgeInsets.fromLTRB(24, 20, 24, 20),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text('카테고리별 탐색',
+                      style: TextStyle(
+                          fontSize: 15,
+                          fontWeight: FontWeight.bold,
+                          color: subTextColor)),
+                  const SizedBox(height: 14),
+                  Row(
+                    children: [
+                      _CategoryCard(
+                        icon: LucideIcons.flame,
+                        label: '한식',
+                        color: isDark ? Colors.red.shade300 : Colors.red.shade400,
+                        count: 10,
+                        onTap: () => _goSearch(initialCategory: '한식'),
+                      ),
+                      const SizedBox(width: 10),
+                      _CategoryCard(
+                        icon: LucideIcons.utensils,
+                        label: '중식',
+                        color: isDark ? Colors.orange.shade300 : Colors.orange.shade500,
+                        count: 10,
+                        onTap: () => _goSearch(initialCategory: '중식'),
+                      ),
+                      const SizedBox(width: 10),
+                      _CategoryCard(
+                        icon: LucideIcons.wine,
+                        label: '양식',
+                        color: isDark ? Colors.purple.shade300 : Colors.purple.shade400,
+                        count: 10,
+                        onTap: () => _goSearch(initialCategory: '양식'),
+                      ),
+                      const SizedBox(width: 10),
+                      _CategoryCard(
+                        icon: LucideIcons.coffee,
+                        label: '카페',
+                        color: isDark ? Colors.brown.shade300 : Colors.brown.shade400,
+                        count: 10,
+                        onTap: () => _goSearch(initialCategory: '카페'),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 8),
 
-                                      // 접근성 태그 행
-                                      Wrap(
-                                        spacing: 8,
-                                        runSpacing: 6,
-                                        children: [
-                                          if (r.hasWheelchairRamp)
-                                            _buildAccessibilityTag(
-                                                LucideIcons.accessibility, '휠체어 접근', Colors.green),
-                                          if (r.allowsGuideDogs)
-                                            _buildAccessibilityTag(
-                                                LucideIcons.dog, '안내견 동반', Colors.teal),
-                                          if (r.hasAudioMenu)
-                                            _buildAccessibilityTag(
-                                                LucideIcons.headphones, '오디오 메뉴', Colors.purple),
-                                        ],
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                              ],
+            // ── 인기 검색어 ────────────────────────────────────────────────────
+            Container(
+              color: surfaceColor,
+              padding: const EdgeInsets.fromLTRB(24, 20, 24, 20),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Icon(LucideIcons.trendingUp,
+                          size: 15, color: isDark ? Colors.blue.shade300 : Colors.blue.shade600),
+                      const SizedBox(width: 6),
+                      Text('인기 검색어',
+                          style: TextStyle(
+                              fontSize: 15,
+                              fontWeight: FontWeight.bold,
+                              color: subTextColor)),
+                    ],
+                  ),
+                  const SizedBox(height: 14),
+                  Wrap(
+                    spacing: 8,
+                    runSpacing: 8,
+                    children: [
+                      '갈비', '파스타', '커피', '비빔밥', '딤섬',
+                      '스테이크', '마라탕', '크루아상', '순두부찌개', '라떼',
+                    ].map((tag) {
+                      return GestureDetector(
+                        onTap: () => _goSearch(initialQuery: tag),
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 14, vertical: 8),
+                          decoration: BoxDecoration(
+                            color: isDark ? const Color(0xFF2A2A2A) : const Color(0xFFF4F6FB),
+                            borderRadius: BorderRadius.circular(20),
+                            border: Border.all(color: isDark ? Colors.grey.shade700 : Colors.grey.shade200),
+                          ),
+                          child: Text(
+                            '# $tag',
+                            style: TextStyle(
+                              fontSize: 13,
+                              fontWeight: FontWeight.w600,
+                              color: isDark ? Colors.blue.shade300 : Colors.blue.shade700,
                             ),
                           ),
-                        );
-                      },
-                    ),
+                        ),
+                      );
+                    }).toList(),
+                  ),
+                ],
+              ),
             ),
+            const SizedBox(height: 8),
+
+            // ── 배리어프리 정보 배너 ───────────────────────────────────────────
+            Container(
+              color: surfaceColor,
+              padding: const EdgeInsets.fromLTRB(24, 20, 24, 20),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text('배리어프리 서비스 안내',
+                      style: TextStyle(
+                          fontSize: 15,
+                          fontWeight: FontWeight.bold,
+                          color: subTextColor)),
+                  const SizedBox(height: 14),
+                  _AccessibilityBanner(
+                    icon: LucideIcons.accessibility,
+                    color: isDark ? Colors.green.shade300 : Colors.green,
+                    title: '휠체어 접근 가능',
+                    desc: '경사로·엘리베이터·넓은 통로 완비',
+                    onTap: () => _goSearch(initialQuery: '휠체어'),
+                  ),
+                  const SizedBox(height: 10),
+                  _AccessibilityBanner(
+                    icon: LucideIcons.dog,
+                    color: isDark ? Colors.teal.shade300 : Colors.teal,
+                    title: '안내견 동반 가능',
+                    desc: '시각장애인 안내견 동반 입장 허용',
+                    onTap: () => _goSearch(initialQuery: '안내견'),
+                  ),
+                  const SizedBox(height: 10),
+                  _AccessibilityBanner(
+                    icon: LucideIcons.headphones,
+                    color: isDark ? Colors.purple.shade300 : Colors.purple,
+                    title: '오디오 메뉴판 제공',
+                    desc: '시각장애인용 음성 메뉴 안내 지원',
+                    onTap: () => _goSearch(initialQuery: '오디오'),
+                  ),
+                ],
+              ),
+            ),
+
+            const SizedBox(height: 100),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+// ── 카테고리 카드 ─────────────────────────────────────────────────────────────
+class _CategoryCard extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final Color color;
+  final int count;
+  final VoidCallback onTap;
+
+  const _CategoryCard({
+    required this.icon,
+    required this.label,
+    required this.color,
+    required this.count,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    
+    return Expanded(
+      child: GestureDetector(
+        onTap: onTap,
+        child: Container(
+          padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 8),
+          decoration: BoxDecoration(
+            color: color.withOpacity(isDark ? 0.15 : 0.08),
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(color: color.withOpacity(isDark ? 0.3 : 0.2)),
+          ),
+          child: Column(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(10),
+                decoration: BoxDecoration(
+                  color: color.withOpacity(isDark ? 0.25 : 0.15),
+                  shape: BoxShape.circle,
+                ),
+                child: Icon(icon, size: 22, color: color),
+              ),
+              const SizedBox(height: 8),
+              Text(label,
+                  style: TextStyle(
+                      fontSize: 13,
+                      fontWeight: FontWeight.bold,
+                      color: isDark ? Colors.white : Colors.grey.shade800)),
+              const SizedBox(height: 2),
+              Text('$count곳',
+                  style:
+                      TextStyle(fontSize: 11, color: isDark ? Colors.grey.shade400 : Colors.grey.shade500)),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+// ── 배리어프리 배너 카드 ──────────────────────────────────────────────────────
+class _AccessibilityBanner extends StatelessWidget {
+  final IconData icon;
+  final Color color;
+  final String title;
+  final String desc;
+  final VoidCallback onTap;
+
+  const _AccessibilityBanner({
+    required this.icon,
+    required this.color,
+    required this.title,
+    required this.desc,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+        decoration: BoxDecoration(
+          color: color.withOpacity(isDark ? 0.12 : 0.06),
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(color: color.withOpacity(isDark ? 0.3 : 0.18)),
+        ),
+        child: Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: color.withOpacity(isDark ? 0.25 : 0.15),
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: Icon(icon, size: 18, color: color),
+            ),
+            const SizedBox(width: 14),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(title,
+                      style: TextStyle(
+                          fontSize: 13,
+                          fontWeight: FontWeight.bold,
+                          color: isDark ? Colors.white : Colors.grey.shade800)),
+                  const SizedBox(height: 2),
+                  Text(desc,
+                      style: TextStyle(
+                          fontSize: 12, color: isDark ? Colors.grey.shade400 : Colors.grey.shade600)),
+                ],
+              ),
+            ),
+            Icon(LucideIcons.chevronRight,
+                size: 16, color: Colors.grey.shade400),
           ],
         ),
       ),

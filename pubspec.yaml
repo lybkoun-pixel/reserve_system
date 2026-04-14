@@ -37,6 +37,7 @@ dependencies:
   cupertino_icons: ^1.0.8
   flutter_tts: ^4.0.2
   lucide_icons: ^0.257.0
+  speech_to_text: ^7.3.0
 
 dev_dependencies:
   flutter_test:
