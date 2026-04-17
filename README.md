@@ -1,16 +1,38 @@
-# dd
+# 🍽 일산 배리어프리 맛집 예약 앱 (Ilsan Barrier-Free Restaurant App)
 
-A new Flutter project.
+## 🌟 프로젝트 소개
+일산 지역을 중심으로 한 **프리미엄 배리어프리 맛집 예약 및 이동 안내 모바일 애플리케이션**입니다. 
+휠체어 사용자, 시각 장애인 등 사회적 약자를 포함한 모든 사용자가 장벽 없이 맛집을 찾고, 원활하게 예약하며, 안전하게 이동할 수 있도록 돕는 포용적인(Inclusive) 서비스를 제공하는 것을 목표로 합니다.
 
-## Getting Started
+## ✨ 주요 기능
+- **배리어프리 시설 필터링:** 휠체어나 유아차 등의 접근이 용이한 경사로, 장애인 화장실 등이 구비된 식당을 쉽게 찾아볼 수 있습니다.
+- **접근성 좌석 예약:** 식당 예약 시 휠체어 접근이 쉬운 배리어프리 전용 좌석을 바로 선택하고 예약할 수 있습니다.
+- **음성 기반 검색 (STT & TTS):** `speech_to_text`와 `flutter_tts` 기술을 적용하여, 화면 터치가 어려운 환경에서도 음성만으로 검색과 안내를 받을 수 있습니다.
+- **키보드 네비게이션 및 포커스 관리:** 화면을 보지 않고 키보드 인터페이스만으로도 앱의 모든 기능을 원활하게 조작 가능하도록 접근성을 최적화했습니다.
+- **프리미엄 UI / 다크 모드:** 시각적 피로도를 낮추는 다크 모드와 고대비 UI를 완벽하게 지원하며, 미려하고 현대적인 디자인을 자랑합니다.
+- **독자적인 이동 안내:** 구글 맵에 의존하지 않고, 지역 상황에 최적화된 맞춤형 실시간 위치 정보 및 이동 지원을 제공합니다.
 
-This project is a starting point for a Flutter application.
+## 🛠 기술 스택
+- **프레임워크:** Flutter
+- **언어:** Dart
+- **주요 패키지:** `flutter_tts`, `speech_to_text`, `lucide_icons` 등
 
-A few resources to get you started if this is your first Flutter project:
+## 🚀 시작하기
 
-- [Lab: Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Cookbook: Useful Flutter samples](https://docs.flutter.dev/cookbook)
+### 사전 준비 요소
+- [Flutter SDK](https://docs.flutter.dev/get-started/install) (^3.5.1 이상)
+- Android Studio 또는 VS Code
 
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+### 설치 및 실행 방법
+1. 프로젝트 저장소를 클론(Clone)합니다.
+2. 터미널을 열고 필요한 패키지를 설치합니다:
+   ```bash
+   flutter pub get
+   ```
+3. 디바이스 또는 에뮬레이터를 연결하고 앱을 실행합니다:
+   ```bash
+   flutter run
+   ```
+
+## 🤝 접근성을 향한 다짐
+이 프로젝트는 **"누구에게나 열려있는 맛집 경험"**을 제공하기 위해 지속적으로 개선되고 있습니다. 장애의 유무가 일상을 즐기는 데 장벽이 되지 않게 하려는 저희의 노력에 언제나 많은 관심과 기여를 환영합니다!
